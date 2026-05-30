@@ -8,9 +8,9 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    ports:
-      - "9090:9090"
     restart: unless-stopped
+    networks:
+      - monitoring
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -29,8 +29,11 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     restart: unless-stopped
+    # ports: убрал,
+    networks:
+      - monitoring
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/-/healthy"]
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,9 +49,9 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-    ports:
-      - "9100:9100"
     restart: unless-stopped
+    networks:
+      - monitoring
 
 volumes:
   prometheus_data:
