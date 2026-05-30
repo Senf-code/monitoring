@@ -17,5 +17,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Print test message
-        run: echo "CI pipeline works!"
+      - name: Install yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get Install -y yamllint
+
+      - name: Validate YAML files
+        run: |
+          yamllint .
