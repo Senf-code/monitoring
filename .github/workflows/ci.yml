@@ -20,7 +20,7 @@ jobs:
       - name: Install yamllint
         run: |
           sudo apt-get update
-          sudo apt-get Install -y yamllint
+          sudo apt-get install -y yamllint
 
       - name: Validate YAML files
         run: |
