@@ -44,7 +44,7 @@ jobs:
           docker run --rm \
           --entrypoint promtool \
           -v ${{ github.workspace }}/prometheus.yml:/prometheus.yml \
-          prom/prometheus:latest \
+          prom/prometheus:v2.53.5 \
           check config /prometheus.yml
 
   test-stack:
