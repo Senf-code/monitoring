@@ -81,11 +81,20 @@ jobs:
         run: |
           docker exec grafana wget -qO- http://prometheus:9090/-/healthy
 
-      - name: Check Node Exporter metrics are scraped
+      - name: Wait for Node Exporter metrics to be scraped
         run: |
-          docker exec grafana wget -qO- \
-            "http://prometheus:9090/api/v1/query?query=up" \
-            | grep -q '"value"'
+          for i in $(seq 1 12); do
+            if docker exec grafana wget -qO- \
+              "http://prometheus:9090/api/v1/query?query=up{job=\"node_exporter\"}" \
+              | grep -q '"value"'; then
+              echo "Metrics are being scraped"
+              exit 0
+            fi
+            echo "Attempt $i/12, retrying in 5s..."
+            sleep 5
+          done
+          echo "ERROR: Node Exporter metrics not found"
+        exit 1
 
       - name: Show logs on failure
         if: failure()
