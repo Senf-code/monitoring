@@ -46,5 +46,6 @@ Node Exporter ---> Prometheus ---> Grafana
 ```bash
 git clone https://github.com/Senf-code/monitoring.git
 cd monitoring
+cp .env.example .env
 docker compose up -d
 ```
