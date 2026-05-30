@@ -42,8 +42,8 @@ jobs:
       - name: Validate Prometheus config
         run: |
           docker run --rm \
-          --entrypoint promtool \
           -v ${{ github.workspace }}/prometheus.yml:/prometheus.yml \
+          --entrypoint promtool \
           prom/prometheus:v2.53.5 \
           check config /prometheus.yml
 
@@ -94,6 +94,7 @@ jobs:
             sleep 5
           done
           echo "ERROR: Node Exporter metrics not found"
+          docker compose logs prometheus
           exit 1
 
       - name: Show logs on failure
