@@ -42,9 +42,10 @@ jobs:
       - name: Validate Prometheus config
         run: |
           docker run --rm \
+          --entrypoint promtool \
           -v ${{ github.workspace }}/prometheus.yml:/prometheus.yml \
           prom/prometheus:latest \
-          promtool check config /prometheus.yml
+          check config /prometheus.yml
 
   test-stack:
     runs-on: ubuntu-latest
