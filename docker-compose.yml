@@ -2,12 +2,15 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.5
     container_name: prometheus
+    #ports:
+      #- "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
     restart: unless-stopped
     networks:
       - monitoring
@@ -31,11 +34,12 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
-    depends_on:
-      prometheus:
-        condition: service_healthy
+    #depends_on:
+      #prometheus:
+        #condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/healthy"]
+      #test: ["CMD", "wget", "--spider", "http://localhost:3000/api/healthy"]
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -43,6 +47,8 @@ services:
   node_exporter:
     image: prom/node-exporter:v1.10.2
     container_name: node_exporter
+    #ports:
+      #- "9100:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -51,6 +57,20 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: grc.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
     restart: unless-stopped
     networks:
       - monitoring
