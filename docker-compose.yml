@@ -29,9 +29,11 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     restart: unless-stopped
-    # ports: убрал,
     networks:
       - monitoring
+    depends_on:
+      prometheus:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/api/healthy"]
       interval: 30s
