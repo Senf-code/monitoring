@@ -44,8 +44,60 @@ jobs:
           docker run --rm \
           -v ${{ github.workspace }}/prometheus.yml:/prometheus.yml \
           --entrypoint promtool \
-          prom/prometheus:v2.53.5 \
+          prom/prometheus:v3.12.0 \
           check config /prometheus.yml
+
+      - name: Validate Grafana provisioning files
+        run: |
+          python3 << 'EOF'
+          import yaml, sys, os
+
+          errors = []
+
+          ds_path = "grafana/provisioning/datasources/datasource.yml"
+          if not os.path.exists(ds_path):
+              errors.append(f"Missing: {ds_path}")
+          else:
+              with open(ds_path) as f:
+                  try:
+                      ds = yaml.safe_load(f)
+                      if not ds:
+                          errors.append("Empty datasource file")
+                      elif "datasources" not in ds:
+                          errors.append("Missing 'datasources' key")
+                      else:
+                          for i, d in enumerate(ds["datasources"]):
+                              for key in ("name", "type", "url"):
+                                  if key not in d:
+                                      errors.append(f"datasource[{i}]: missing '{key}'")
+                  except yaml.YAMLError as e:
+                      errors.append(f"YAML parse error in {ds_path}: {e}")
+
+          db_path = "grafana/provisioning/dashboards/dashboard.yml"
+          if not os.path.exists(db_path):
+              errors.append(f"Missing: {db_path}")
+          else:
+              with open(db_path) as f:
+                  try:
+                      db = yaml.safe_load(f)
+                      if not db:
+                          errors.append("Empty dashboard file")
+                      elif "providers" not in db:
+                          errors.append("Missing 'providers' key")
+                      else:
+                          for i, p in enumerate(db["providers"]):
+                              for key in ("name", "type", "options"):
+                                  if key not in p:
+                                      errors.append(f"provider[{i}]: missing '{key}'")
+                  except yaml.YAMLError as e:
+                      errors.append(f"YAML parse error in {db_path}: {e}")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          print("All Grafana provisioning files are valid")
+          EOF
 
   test-stack:
     runs-on: ubuntu-latest
@@ -75,6 +127,20 @@ jobs:
             sleep 10
           done
           echo "ERROR: Grafana did not start in time"
+          exit 1
+
+      - name: Wait for Prometheus to be healthy
+        run: |
+          for i in $(seq 1 12); do
+            if docker exec grafana wget -qO- http://prometheus:9090/-/healthy &>/dev/null; then
+              echo "Prometheus is up"
+              exit 0
+            fi
+            echo "Attempt $i/12, retrying in 10s..."
+            sleep 10
+          done
+          echo "ERROR: Prometheus did not start in time"
+          docker compose logs prometheus
           exit 1
 
       - name: Check Prometheus is reachable from Grafana container

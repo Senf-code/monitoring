@@ -1,14 +1,17 @@
 services:
   prometheus:
-    image: prom/prometheus:v2.53.5
+    image: prom/prometheus:v3.12.0
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=100GB'
     restart: unless-stopped
     networks:
       - monitoring
@@ -17,29 +20,38 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    cpus: '2'
+    mem_limit: 4g
+    mem_reservation: 1g
 
   grafana:
-    image: grafana/grafana:12.3.0
+    image: grafana/grafana:13.0.2
     container_name: grafana
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    depends_on:
+      prometheus:
+        condition: service_started
     restart: unless-stopped
     networks:
       - monitoring
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/-/healthy"]
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    cpus: '1'
+    mem_limit: 2g
+    mem_reservation: 256m
 
   node_exporter:
-    image: prom/node-exporter:v1.10.2
+    image: prom/node-exporter:v1.11.1
     container_name: node_exporter
     volumes:
       - /proc:/host/proc:ro
@@ -52,12 +64,13 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    cpus: '1'
+    mem_limit: 512m
+    mem_reservation: 128m
 
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.57.0
     container_name: cadvisor
-    ports:
-      - "8080:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -66,6 +79,9 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    cpus: '2'
+    mem_limit: 2g
+    mem_reservation: 512m
 
 volumes:
   prometheus_data:
@@ -74,3 +90,5 @@ volumes:
 networks:
   monitoring:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
