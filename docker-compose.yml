@@ -10,7 +10,6 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
       - '--storage.tsdb.retention.time=30d'
       - '--storage.tsdb.retention.size=100GB'
     restart: unless-stopped
@@ -24,6 +23,11 @@ services:
     cpus: '2'
     mem_limit: 4g
     mem_reservation: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   grafana:
     image: grafana/grafana:13.0.2
@@ -38,7 +42,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     depends_on:
       prometheus:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - monitoring
@@ -50,6 +54,11 @@ services:
     cpus: '1'
     mem_limit: 2g
     mem_reservation: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   node_exporter:
     image: prom/node-exporter:v1.11.1
@@ -65,9 +74,19 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     cpus: '1'
     mem_limit: 512m
     mem_reservation: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.57.0
@@ -80,9 +99,19 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     cpus: '2'
     mem_limit: 2g
     mem_reservation: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   prometheus_data:
