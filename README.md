@@ -44,6 +44,10 @@ Node Exporter ──> Prometheus ──> Grafana
 
 ![Network traffic](screenshots/grafana-network-traffic.png)
 
+### Cadvisor Dashboard
+
+![Cadvisor Dashboard](screenshots/cadvisor.png)
+
 ### Prometheus Targets
 
 ![Prometheus Targets](screenshots/prometheus-targets.png)
