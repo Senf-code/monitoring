@@ -37,7 +37,9 @@ groups:
           severity: warning
         annotations:
           summary: "Disk will fill in 24 hours on {{ $labels.instance }}"
-          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is predicted to fill within 24 hours."
+          description: >-
+            Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }}
+            is predicted to fill within 24 hours.
 
   - name: containers
     interval: 1m
