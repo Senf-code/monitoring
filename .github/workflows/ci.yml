@@ -62,12 +62,17 @@ jobs:
               with open(ds_path) as f:
                   try:
                       ds = yaml.safe_load(f)
-                      if not ds:
-                          errors.append("Empty datasource file")
+                      if not isinstance(ds, dict):
+                          errors.append("Datasource file must be a YAML mapping")
                       elif "datasources" not in ds:
                           errors.append("Missing 'datasources' key")
+                      elif not isinstance(ds["datasources"], list):
+                          errors.append("'datasources' must be a list")
                       else:
                           for i, d in enumerate(ds["datasources"]):
+                              if not isinstance(d, dict):
+                                  errors.append(f"datasource[{i}]: must be a mapping")
+                                  continue
                               for key in ("name", "type", "url"):
                                   if key not in d:
                                       errors.append(f"datasource[{i}]: missing '{key}'")
@@ -81,12 +86,17 @@ jobs:
               with open(db_path) as f:
                   try:
                       db = yaml.safe_load(f)
-                      if not db:
-                          errors.append("Empty dashboard file")
+                      if not isinstance(db, dict):
+                          errors.append("Dashboard file must be a YAML mapping")
                       elif "providers" not in db:
                           errors.append("Missing 'providers' key")
+                      elif not isinstance(db["providers"], list):
+                          errors.append("'providers' must be a list")
                       else:
                           for i, p in enumerate(db["providers"]):
+                              if not isinstance(p, dict):
+                                  errors.append(f"provider[{i}]: must be a mapping")
+                                  continue
                               for key in ("name", "type", "options"):
                                   if key not in p:
                                       errors.append(f"provider[{i}]: missing '{key}'")
