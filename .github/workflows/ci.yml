@@ -140,6 +140,9 @@ jobs:
           echo "GRAFANA_USER=${{ secrets.GRAFANA_USER }}" >> .env
           echo "GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}" >> .env
 
+      - name: Create Alertmanager config
+        run: cp alertmanager.yml.example alertmanager.yml
+
       - name: Start monitoring stack
         run: docker compose up -d
 
