@@ -1,0 +1,65 @@
+---
+groups:
+  - name: infrastructure
+    interval: 1m
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "{{ $labels.job }} target {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+      - alert: HighCPULoad
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU load on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.2f\" }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | printf \"%.2f\" }}% on {{ $labels.instance }}"
+
+      - alert: DiskWillFillIn24Hours
+        expr: predict_linear(node_filesystem_free_bytes{fstype!~"tmpfs|fuse.lxcfs",mountpoint="/"}[6h], 24 * 3600) < 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk will fill in 24 hours on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} is predicted to fill within 24 hours."
+
+  - name: containers
+    interval: 1m
+    rules:
+      - alert: ContainerHighCPU
+        expr: sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m])) by (container) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU in container {{ $labels.container }}"
+          description: "Container {{ $labels.container }} CPU usage is {{ $value | printf \"%.2f\" }}%"
+
+      - alert: ContainerHighMemory
+        expr: >-
+          (container_memory_usage_bytes{container!="",container!="POD"}
+           / container_spec_memory_limit_bytes{container!="",container!="POD"} * 100) > 80
+          and
+          container_spec_memory_limit_bytes{container!="",container!="POD"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory in container {{ $labels.container }}"
+          description: "Container {{ $labels.container }} memory usage is {{ $value | printf \"%.2f\" }}% of its limit"

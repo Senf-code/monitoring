@@ -48,6 +48,22 @@ jobs:
           prom/prometheus:v3.12.0 \
           check config /prometheus.yml
 
+      - name: Validate alert rules
+        run: |
+          docker run --rm \
+          -v ${{ github.workspace }}/alerts.yml:/alerts.yml \
+          --entrypoint promtool \
+          prom/prometheus:v3.12.0 \
+          check rules /alerts.yml
+
+      - name: Validate Alertmanager config
+        run: |
+          docker run --rm \
+          -v ${{ github.workspace }}/alertmanager.yml.example:/etc/alertmanager/alertmanager.yml \
+          --entrypoint amtool \
+          prom/alertmanager:v0.27.0 \
+          check-config /etc/alertmanager/alertmanager.yml
+
       - name: Validate Grafana provisioning files
         run: |
           python3 << 'EOF'
