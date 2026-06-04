@@ -94,6 +94,7 @@ services:
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.57.0
     container_name: cadvisor
+    privileged: true
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
